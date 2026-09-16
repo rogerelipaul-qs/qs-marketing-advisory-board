@@ -102,7 +102,7 @@ def load_context():
 
 # 3. Sidebar Configuration with Local or Hosted Brand Logo
 with st.sidebar:
-    local_logo = "assets/quickstart_logo.png"
+    local_logo = "assets/QS_full_logo_2026.png"
     if os.path.exists(local_logo):
         st.image(local_logo, use_container_width=True)
     else:
