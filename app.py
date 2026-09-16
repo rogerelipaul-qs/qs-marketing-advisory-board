@@ -5,50 +5,51 @@ from google.genai import types
 
 st.set_page_config(
     page_title="QuickStart | Marketing Advisory Board",
-    page_icon="🏛️",
+    page_icon="assets/qs_mini_logo_2026.png" if os.path.exists("assets/qs_mini_logo.png") else ("qs_mini_logo.png" if os.path.exists("qs_mini_logo.png") else "🏛️"),
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- QUICKSTART DYNAMIC THEME (LIGHT & DARK ADAPTIVE) ---
+# --- ESCAPE CURRENCY FOR STREAMLIT LATEX PARSER ---
+def format_currency_markdown(text: str) -> str:
+    """Escapes dollar signs so Streamlit treats amounts as currency rather than inline LaTeX."""
+    return text.replace("$", "\\$")
+
+# --- ADAPTIVE QUICKSTART THEME (LIGHT & DARK AUTOMATIC) ---
 st.markdown("""
     <style>
     :root {
-        --qs-navy: #0F2042;
         --qs-blue: #0066CC;
         --qs-cyan: #00B4D8;
-        --qs-accent: #0284C7;
     }
 
-    /* Adaptive container styling */
-    .board-header {
-        padding: 1.75rem 2rem;
-        background: linear-gradient(135deg, rgba(15, 32, 66, 0.95) 0%, rgba(10, 20, 40, 0.98) 100%);
-        border-radius: 12px;
-        border-left: 6px solid var(--qs-cyan);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    /* Clean, non-boxed header */
+    .header-container {
+        padding-bottom: 1.25rem;
         margin-bottom: 1.5rem;
+        border-bottom: 2px solid rgba(128, 128, 128, 0.2);
     }
 
     .board-title {
-        color: #FFFFFF !important;
-        font-size: 1.85rem;
+        color: var(--text-color) !important;
+        font-size: 2.1rem;
         font-weight: 700;
         letter-spacing: -0.02em;
         margin: 0;
+        padding-top: 0.15rem;
     }
 
     .board-subtitle {
-        color: #94A3B8 !important;
-        font-size: 0.95rem;
-        margin-top: 0.4rem;
+        color: rgba(128, 128, 128, 0.9) !important;
+        font-size: 0.96rem;
+        margin-top: 0.25rem;
         margin-bottom: 0;
     }
 
-    /* Sidebar Member Card Styling */
+    /* Sidebar Personas */
     .member-card {
         background-color: var(--secondary-background-color);
-        border: 1px solid rgba(128, 128, 128, 0.2);
+        border: 1px solid rgba(128, 128, 128, 0.18);
         border-left: 4px solid var(--qs-blue);
         padding: 8px 12px;
         margin-bottom: 8px;
@@ -72,7 +73,7 @@ st.markdown("""
         color: rgba(128, 128, 128, 0.85);
     }
 
-    /* Chat bubble polish */
+    /* Chat message polish */
     .stChatMessage {
         border-radius: 8px;
         margin-bottom: 10px;
@@ -100,19 +101,18 @@ def load_context():
     memory = read_file("board_memory.md")
     return f"{agent}\n\n=== COMPANY CONTEXT ===\n{company}\n\n=== SESSION MEMORY ===\n{memory}"
 
-# 3. Sidebar Configuration with Local or Hosted Brand Logo
+# 3. Sidebar Configuration
 with st.sidebar:
-    local_logo = "assets/QS_full_logo_2026.png"
-    if os.path.exists(local_logo):
-        st.image(local_logo, use_container_width=True)
-    else:
+    # Sidebar Logo Loader
+    sidebar_logo_paths = ["assets/QS_full_logo_2026.png", "assets/quickstart_logo.png", "QS_full_logo_2026.png"]
+    logo_displayed = False
+    for path in sidebar_logo_paths:
+        if os.path.exists(path):
+            st.image(path, use_container_width=True)
+            logo_displayed = True
+            break
+    if not logo_displayed:
         st.image("https://www.quickstart.com/wp-content/uploads/2021/04/qs-logo.svg", width=190)
-
-    # Helper to prevent Streamlit from misinterpreting currency as LaTeX math
-def format_currency_markdown(text: str) -> str:
-    # Escapes standalone dollar signs like $40k or $40,000 without breaking code blocks
-    return text.replace("$", "\\$")
-
 
     st.markdown("### Active Advisory Board")
     
@@ -142,13 +142,34 @@ def format_currency_markdown(text: str) -> str:
             del st.session_state.chat
         st.rerun()
 
-# 4. Branded Header Banner
-st.markdown("""
-    <div class="board-header">
-        <h1 class="board-title">🏛️ QuickStart Marketing Advisory Board</h1>
-        <p class="board-subtitle">Autonomous Strategic Deliberation • 8 Specialized Personas • Enterprise, B2C Bootcamps, Higher-Ed & B2G</p>
-    </div>
-""", unsafe_allow_html=True)
+# 4. Header Banner with qs_mini_logo.png
+mini_logo_paths = ["assets/qs_mini_logo.png", "qs_mini_logo.png"]
+mini_logo_found = None
+for path in mini_logo_paths:
+    if os.path.exists(path):
+        mini_logo_found = path
+        break
+
+if mini_logo_found:
+    col_logo, col_title = st.columns([0.08, 0.92], vertical_alignment="center")
+    with col_logo:
+        st.image(mini_logo_found, width=65)
+    with col_title:
+        st.markdown("""
+            <div>
+                <h1 class="board-title">QuickStart Marketing Advisory Board</h1>
+                <p class="board-subtitle">Autonomous Strategic Deliberation • 8 Specialized Personas • Enterprise B2B, B2C Bootcamps, Higher-Ed & B2G</p>
+            </div>
+        """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+        <div>
+            <h1 class="board-title">QuickStart Marketing Advisory Board</h1>
+            <p class="board-subtitle">Autonomous Strategic Deliberation • 8 Specialized Personas • Enterprise B2B, B2C Bootcamps, Higher-Ed & B2G</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+st.markdown('<div class="header-container"></div>', unsafe_allow_html=True)
 
 # 5. Chat Client Initialization
 if "chat" not in st.session_state:
@@ -171,18 +192,7 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(format_currency_markdown(msg["content"]))
 
-# In your chat response execution:
-    with st.chat_message("assistant"):
-        with st.spinner("Board Chair triaging panel & convening advisors..."):
-            try:
-                response = st.session_state.chat.send_message(prompt)
-                formatted_text = format_currency_markdown(response.text)
-                st.markdown(formatted_text)
-                st.session_state.messages.append({"role": "assistant", "content": response.text})
-            except Exception as e:
-                st.error(f"Board query error: {e}")
-
-# 7. Quick Starter Dilemmas
+# 7. Quick Starter Dilemmas (if chat history is empty)
 if not st.session_state.messages:
     st.markdown("##### Deliberate a strategic priority:")
     col1, col2 = st.columns(2)
@@ -201,13 +211,14 @@ prompt = st.session_state.pop("user_prompt_override", None) or st.chat_input("Su
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
-        st.markdown(prompt)
+        st.markdown(format_currency_markdown(prompt))
 
     with st.chat_message("assistant"):
         with st.spinner("Board Chair triaging panel & convening advisors..."):
             try:
                 response = st.session_state.chat.send_message(prompt)
-                st.markdown(response.text)
+                formatted_response = format_currency_markdown(response.text)
+                st.markdown(formatted_response)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
             except Exception as e:
                 st.error(f"Board query error: {e}")
