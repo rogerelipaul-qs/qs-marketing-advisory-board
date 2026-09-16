@@ -143,7 +143,7 @@ with st.sidebar:
         st.rerun()
 
 # 4. Header Banner with qs_mini_logo.png
-mini_logo_paths = ["assets/qs_mini_logo.png", "qs_mini_logo.png"]
+mini_logo_paths = ["assets/qs_mini_logo_2026.png", "qs_mini_logo_2026.png"]
 mini_logo_found = None
 for path in mini_logo_paths:
     if os.path.exists(path):
@@ -157,14 +157,14 @@ if mini_logo_found:
     with col_title:
         st.markdown("""
             <div>
-                <h1 class="board-title">QuickStart Marketing Advisory Board</h1>
+                <h1 class="board-title">Marketing Advisory Board</h1>
                 <p class="board-subtitle">Autonomous Strategic Deliberation • 8 Specialized Personas • Enterprise B2B, B2C Bootcamps, Higher-Ed & B2G</p>
             </div>
         """, unsafe_allow_html=True)
 else:
     st.markdown("""
         <div>
-            <h1 class="board-title">QuickStart Marketing Advisory Board</h1>
+            <h1 class="board-title">Marketing Advisory Board</h1>
             <p class="board-subtitle">Autonomous Strategic Deliberation • 8 Specialized Personas • Enterprise B2B, B2C Bootcamps, Higher-Ed & B2G</p>
         </div>
     """, unsafe_allow_html=True)
