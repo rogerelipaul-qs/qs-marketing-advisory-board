@@ -108,6 +108,12 @@ with st.sidebar:
     else:
         st.image("https://www.quickstart.com/wp-content/uploads/2021/04/qs-logo.svg", width=190)
 
+    # Helper to prevent Streamlit from misinterpreting currency as LaTeX math
+def format_currency_markdown(text: str) -> str:
+    # Escapes standalone dollar signs like $40k or $40,000 without breaking code blocks
+    return text.replace("$", "\\$")
+
+
     st.markdown("### Active Advisory Board")
     
     board_members = [
@@ -163,7 +169,18 @@ if "chat" not in st.session_state:
 # 6. Render Message Thread
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+        st.markdown(format_currency_markdown(msg["content"]))
+
+# In your chat response execution:
+    with st.chat_message("assistant"):
+        with st.spinner("Board Chair triaging panel & convening advisors..."):
+            try:
+                response = st.session_state.chat.send_message(prompt)
+                formatted_text = format_currency_markdown(response.text)
+                st.markdown(formatted_text)
+                st.session_state.messages.append({"role": "assistant", "content": response.text})
+            except Exception as e:
+                st.error(f"Board query error: {e}")
 
 # 7. Quick Starter Dilemmas
 if not st.session_state.messages:
