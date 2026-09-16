@@ -5,7 +5,7 @@ from google.genai import types
 
 st.set_page_config(
     page_title="QuickStart | Marketing Advisory Board",
-    page_icon="assets/qs_mini_logo_2026.png" if os.path.exists("assets/qs_mini_logo.png") else ("qs_mini_logo.png" if os.path.exists("qs_mini_logo.png") else "🏛️"),
+    page_icon="assets/QS_mini_logo_2026.png" if os.path.exists("assets/QS_mini_logo_2026.png") else ("assets/QS_mini_logo_2026.png" if os.path.exists("assets/QS_mini_logo_2026.png") else "🏛️"),
     layout="wide",
     initial_sidebar_state="expanded"
 )
