@@ -5,7 +5,7 @@ from google.genai import types
 
 st.set_page_config(
     page_title="QuickStart | Marketing Advisory Board",
-    page_icon="assets/QS_mini_logo_2026.png" if os.path.exists("assets/QS_mini_logo_2026.png") else ("assets/QS_mini_logo_2026.png" if os.path.exists("assets/QS_mini_logo_2026.png") else "🏛️"),
+    page_icon="assets/qs_mini_logo.png" if os.path.exists("assets/qs_mini_logo.png") else ("qs_mini_logo.png" if os.path.exists("qs_mini_logo.png") else "🏛️"),
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -23,7 +23,6 @@ st.markdown("""
         --qs-cyan: #00B4D8;
     }
 
-    /* Clean, non-boxed header */
     .header-container {
         padding-bottom: 1.25rem;
         margin-bottom: 1.5rem;
@@ -46,7 +45,6 @@ st.markdown("""
         margin-bottom: 0;
     }
 
-    /* Sidebar Personas */
     .member-card {
         background-color: var(--secondary-background-color);
         border: 1px solid rgba(128, 128, 128, 0.18);
@@ -73,7 +71,6 @@ st.markdown("""
         color: rgba(128, 128, 128, 0.85);
     }
 
-    /* Chat message polish */
     .stChatMessage {
         border-radius: 8px;
         margin-bottom: 10px;
@@ -87,7 +84,7 @@ if "GEMINI_API_KEY" not in st.secrets:
     st.error("Missing `GEMINI_API_KEY` in Streamlit Secrets. Please configure it in Settings > Secrets.")
     st.stop()
 
-# 2. Resilient Context Loader
+# 2. Context Loader
 @st.cache_data
 def load_context():
     def read_file(filename):
@@ -101,9 +98,8 @@ def load_context():
     memory = read_file("board_memory.md")
     return f"{agent}\n\n=== COMPANY CONTEXT ===\n{company}\n\n=== SESSION MEMORY ===\n{memory}"
 
-# 3. Sidebar Configuration
+# 3. Sidebar Configuration (Single Reset Button)
 with st.sidebar:
-    # Sidebar Logo Loader
     sidebar_logo_paths = ["assets/QS_full_logo_2026.png", "assets/quickstart_logo.png", "QS_full_logo_2026.png"]
     logo_displayed = False
     for path in sidebar_logo_paths:
@@ -136,14 +132,12 @@ with st.sidebar:
         """, unsafe_allow_html=True)
 
     st.markdown("---")
-    if st.button("🔄 Reset Board Session", use_container_width=True):
+    if st.button("🔄 Reset Board Session", key="btn_reset_session", use_container_width=True):
         st.session_state.messages = []
-        if "chat" in st.session_state:
-            del st.session_state.chat
         st.rerun()
 
 # 4. Header Banner with qs_mini_logo.png
-mini_logo_paths = ["assets/qs_mini_logo_2026.png", "qs_mini_logo_2026.png"]
+mini_logo_paths = ["assets/qs_mini_logo.png", "qs_mini_logo.png"]
 mini_logo_found = None
 for path in mini_logo_paths:
     if os.path.exists(path):
@@ -157,29 +151,23 @@ if mini_logo_found:
     with col_title:
         st.markdown("""
             <div>
-                <h1 class="board-title">Marketing Advisory Board</h1>
+                <h1 class="board-title">QuickStart Marketing Advisory Board</h1>
                 <p class="board-subtitle">Autonomous Strategic Deliberation • 8 Specialized Personas • Enterprise B2B, B2C Bootcamps, Higher-Ed & B2G</p>
             </div>
         """, unsafe_allow_html=True)
 else:
     st.markdown("""
         <div>
-            <h1 class="board-title">Marketing Advisory Board</h1>
+            <h1 class="board-title">QuickStart Marketing Advisory Board</h1>
             <p class="board-subtitle">Autonomous Strategic Deliberation • 8 Specialized Personas • Enterprise B2B, B2C Bootcamps, Higher-Ed & B2G</p>
         </div>
     """, unsafe_allow_html=True)
 
 st.markdown('<div class="header-container"></div>', unsafe_allow_html=True)
 
-# 5. Initialize Chat Client & Message History
+# 5. Initialize Messages State
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
-# Reset session handler
-with st.sidebar:
-    if st.button("🔄 Reset Board Session", use_container_width=True):
-        st.session_state.messages = []
-        st.rerun()
 
 # 6. Render Message Thread
 for msg in st.session_state.messages:
@@ -191,11 +179,11 @@ if not st.session_state.messages:
     st.markdown("##### Deliberate a strategic priority:")
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("📊 Paid Search vs. Enterprise ABM Budget Split", use_container_width=True):
+        if st.button("📊 Paid Search vs. Enterprise ABM Budget Split", key="starter_btn_split", use_container_width=True):
             st.session_state.user_prompt_override = "We are debating allocating $40k between non-brand Google Ads for Cyber Bootcamp vs. a dedicated LinkedIn ABM push for enterprise cloud training. What is the board's recommendation?"
             st.rerun()
     with col2:
-        if st.button("🔍 Asset Audit: Job Guarantee Campaign", use_container_width=True):
+        if st.button("🔍 Asset Audit: Job Guarantee Campaign", key="starter_btn_audit", use_container_width=True):
             st.session_state.user_prompt_override = "Please audit this proposed ad campaign headline: 'Get a Guaranteed 6-Figure Cybersecurity Job in 16 Weeks or 100% Tuition Refund.' Provide an executive assessment."
             st.rerun()
 
@@ -203,19 +191,15 @@ if not st.session_state.messages:
 prompt = st.session_state.pop("user_prompt_override", None) or st.chat_input("Submit a strategic proposal or asset for board review...")
 
 if prompt:
-    # Append user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(format_currency_markdown(prompt))
 
-    # Generate Board Response
     with st.chat_message("assistant"):
         with st.spinner("Board Chair triaging panel & convening advisors..."):
             try:
-                # Initialize a fresh client connection per request to prevent pool closing errors
                 client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
-                # Build full turn history for the model
                 formatted_contents = []
                 for m in st.session_state.messages:
                     role = "user" if m["role"] == "user" else "model"
@@ -226,7 +210,6 @@ if prompt:
                         )
                     )
 
-                # Send request
                 response = client.models.generate_content(
                     model="gemini-3.1-pro-preview",
                     contents=formatted_contents,
