@@ -171,21 +171,15 @@ else:
 
 st.markdown('<div class="header-container"></div>', unsafe_allow_html=True)
 
-# 5. Chat Client Initialization
-if "chat" not in st.session_state:
-    try:
-        client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
-        st.session_state.chat = client.chats.create(
-            model="gemini-3.1-pro-preview",
-            config=types.GenerateContentConfig(
-                system_instruction=load_context(),
-                temperature=0.7,
-            )
-        )
+# 5. Initialize Chat Client & Message History
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Reset session handler
+with st.sidebar:
+    if st.button("🔄 Reset Board Session", use_container_width=True):
         st.session_state.messages = []
-    except Exception as e:
-        st.error(f"Initialization error: {e}")
-        st.stop()
+        st.rerun()
 
 # 6. Render Message Thread
 for msg in st.session_state.messages:
@@ -209,16 +203,42 @@ if not st.session_state.messages:
 prompt = st.session_state.pop("user_prompt_override", None) or st.chat_input("Submit a strategic proposal or asset for board review...")
 
 if prompt:
+    # Append user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(format_currency_markdown(prompt))
 
+    # Generate Board Response
     with st.chat_message("assistant"):
         with st.spinner("Board Chair triaging panel & convening advisors..."):
             try:
-                response = st.session_state.chat.send_message(prompt)
+                # Initialize a fresh client connection per request to prevent pool closing errors
+                client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+
+                # Build full turn history for the model
+                formatted_contents = []
+                for m in st.session_state.messages:
+                    role = "user" if m["role"] == "user" else "model"
+                    formatted_contents.append(
+                        types.Content(
+                            role=role,
+                            parts=[types.Part.from_text(text=m["content"])]
+                        )
+                    )
+
+                # Send request
+                response = client.models.generate_content(
+                    model="gemini-3.1-pro-preview",
+                    contents=formatted_contents,
+                    config=types.GenerateContentConfig(
+                        system_instruction=load_context(),
+                        temperature=0.7,
+                    )
+                )
+
                 formatted_response = format_currency_markdown(response.text)
                 st.markdown(formatted_response)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
+
             except Exception as e:
                 st.error(f"Board query error: {e}")
